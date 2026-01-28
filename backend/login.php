@@ -2,6 +2,7 @@
 header("Content-Type: application/json");
 
 require_once "config/mysql.php";
+require_once "config/redis.php";
 
 $email = $_POST['email'];
 $password = $_POST['password'];
@@ -19,10 +20,15 @@ if ($result->num_rows === 1) {
     $user = $result->fetch_assoc();
 
     if (password_verify($password, $user['password'])) {
+        $token = bin2hex(random_bytes(16));
+
+        // Store session in Redis
+        $redis->set($token, $user['id']);
+        
         echo json_encode([
             "status" => "success",
             "message" => "Login successful",
-            "user_id" => $user['id']
+            "token" => $token
         ]);
     } else {
         echo json_encode([

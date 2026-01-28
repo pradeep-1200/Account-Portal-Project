@@ -15,10 +15,11 @@ $(document).ready(function () {
             type: "POST",
             data: { email, password },
             success: function (response) {
-                alert(response.message);
-
                 if (response.status === "success") {
-                    // Session handling comes next lesson
+                    localStorage.setItem("session_token", response.token);
+                    window.location.href = "profile.html";
+                } else {
+                    alert(response.message);
                 }
             }
         });
