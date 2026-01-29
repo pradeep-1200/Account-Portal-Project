@@ -1,5 +1,29 @@
 $(document).ready(function () {
 
+    // --- Helper Functions ---
+    function showAlert(message, type = 'danger') {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <div>${message}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        $('#alertPlaceholder').html(alertHtml);
+    }
+
+    function toggleEditMode(enable) {
+        if (enable) {
+            $("#age, #dob, #contact").prop("disabled", false);
+            $("#saveActions").removeClass("d-none");
+            $("#enableEditBtn").addClass("d-none");
+        } else {
+            $("#age, #dob, #contact").prop("disabled", true);
+            $("#saveActions").addClass("d-none");
+            $("#enableEditBtn").removeClass("d-none");
+        }
+    }
+
+    // --- Auth Check ---
     let token = localStorage.getItem("session_token");
 
     if (!token) {
@@ -7,10 +31,11 @@ $(document).ready(function () {
         return;
     }
 
-    // Token exists → verify with backend
+    // --- Validate Session ---
     $.ajax({
         url: "../backend/validate_session.php",
         type: "POST",
+        dataType: "json",
         data: { token: token },
         success: function (response) {
             if (response.status !== "success") {
@@ -20,26 +45,49 @@ $(document).ready(function () {
         }
     });
 
-    // Fetch profile data
+    // --- Fetch Profile Data ---
     $.ajax({
         url: "../backend/profile_fetch.php",
         type: "POST",
+        dataType: "json",
         data: { token },
         success: function (res) {
-            if (res.status === "success") {
-                $("#age").val(res.data.age);
-                $("#dob").val(res.data.dob);
-                $("#contact").val(res.data.contact);
+            if (res.status === "success" && res.data) {
+                // Pre-fill data
+                $("#age").val(res.data.age || '');
+                $("#dob").val(res.data.dob || '');
+                $("#contact").val(res.data.contact || '');
+            } else {
+                showAlert("Could not load profile details.", "warning");
             }
+        },
+        error: function() {
+            showAlert("Connection error while fetching profile.", "danger");
         }
     });
 
-    // Update profile
+    // --- UI Interactions ---
+    $("#enableEditBtn").click(function() {
+        toggleEditMode(true);
+    });
+
+    $("#cancelEditBtn").click(function() {
+        toggleEditMode(false);
+        // Optionally re-fetch data to reset changes
+        location.reload(); 
+    });
+
+    // --- Update Profile ---
     $("#updateProfile").click(function () {
+        
+        let $btn = $(this);
+        let originalText = $btn.html();
+        $btn.prop('disabled', true).text('Saving...');
 
         $.ajax({
             url: "../backend/profile_update.php",
             type: "POST",
+            dataType: "json",
             data: {
                 token,
                 age: $("#age").val(),
@@ -47,26 +95,32 @@ $(document).ready(function () {
                 contact: $("#contact").val()
             },
             success: function (res) {
-                alert(res.message);
+                if(res.status === 'success') {
+                    showAlert(res.message, "success");
+                    toggleEditMode(false); // Return to read-only
+                } else {
+                    showAlert(res.message || "Update failed", "danger");
+                }
+            },
+            error: function () {
+                showAlert("An error occurred while updating.", "danger");
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html(originalText);
             }
         });
-
     });
 
+    // --- Logout ---
     $("#logoutBtn").click(function () {
-
-        let token = localStorage.getItem("session_token");
-
         $.ajax({
             url: "../backend/logout.php",
             type: "POST",
             data: { token: token },
             complete: function () {
-                // Frontend cleanup
                 localStorage.removeItem("session_token");
                 window.location.href = "login.html";
             }
         });
-
     });
 });

@@ -1,37 +1,63 @@
 $(document).ready(function () {
-    console.log("Register page loaded");
+    
+    function showAlert(message, type = 'danger') {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <div>${message}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        $('#alertPlaceholder').html(alertHtml);
+    }
 
     $("#registerBtn").click(function () {
-        console.log("Register button clicked");
+        
+        // Collect Auth Details
+        let name = $("#name").val().trim();
+        let email = $("#email").val().trim();
+        let password = $("#password").val().trim();
 
-        let name = $("#name").val();
-        let email = $("#email").val();
-        let password = $("#password").val();
+        // Collect Profile Details
+        let age = $("#age").val().trim();
+        let dob = $("#dob").val().trim();
+        let contact = $("#contact").val().trim();
 
-        console.log(name, email, password);
-
-        if (name === "" || email === "" || password === "") {
-            alert("All fields are required");
+        // Validate
+        if (!name || !email || !password || !age || !dob || !contact) {
+            showAlert("Please fill in ALL fields (Account & Profile)", "warning");
             return;
         }
+
+        // Loading
+        let $btn = $(this);
+        let originalText = $btn.html();
+        $btn.prop('disabled', true).html('Processing...');
 
         $.ajax({
             url: "../backend/register.php",
             type: "POST",
             dataType: "json",
             data: {
-                name: name,
-                email: email,
-                password: password
+                name, email, password,
+                age, dob, contact
             },
             success: function (response) {
-                alert(response.message);
+                if (response.status === 'success') {
+                    showAlert(response.message, "success");
+                    $("#registerBtn").hide(); // prevent multiple submits
+                    setTimeout(() => window.location.href = "login.html", 1500);
+                } else {
+                    showAlert(response.message || "Registration failed", "danger");
+                }
             },
             error: function (xhr, status, error) {
-                console.log("AJAX Error:", xhr.responseText);
-                console.log("Status:", status);
-                console.log("Error:", error);
-                alert("Something went wrong: " + xhr.responseText);
+                console.error("AJAX Error:", status, error);
+                showAlert("Server communication error", "danger");
+            },
+            complete: function() {
+                if ($("#registerBtn").is(":visible")) {
+                   $btn.prop('disabled', false).html(originalText);
+                }
             }
         });
     });
