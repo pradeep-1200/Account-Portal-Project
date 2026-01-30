@@ -3,7 +3,8 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 try {
-    $client = new MongoDB\Client("mongodb+srv://voiddragon351_db_user:12560@account-portal.lmbhutd.mongodb.net/");
+    // Local MongoDB Connection
+    $client = new MongoDB\Client("mongodb://127.0.0.1:27017");
     $db = $client->account_portal;
     $profiles = $db->profiles;
 } catch (Exception $e) {
