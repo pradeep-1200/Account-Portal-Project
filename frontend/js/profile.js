@@ -60,6 +60,7 @@ $(document).ready(function () {
         success: function (res) {
             if (res.status === "success" && res.data) {
                 // Pre-fill data
+                $("#userNameDisplay").text(res.data.name || 'User');
                 $("#age").val(res.data.age || '');
                 $("#dob").val(res.data.dob || '');
                 $("#contact").val(res.data.contact || '');
