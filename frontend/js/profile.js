@@ -5,11 +5,17 @@ $(document).ready(function () {
         const alertHtml = `
             <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                 <div>${message}</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <button type="button" class="btn-close close-alert-btn" aria-label="Close"></button>
             </div>
         `;
         $('#alertPlaceholder').html(alertHtml);
     }
+
+
+    // --- Event Listener for Alert Close Button ---
+    $(document).on('click', '.close-alert-btn', function() {
+        $(this).closest('.alert').remove();
+    });
 
     function toggleEditMode(enable) {
         if (enable) {
